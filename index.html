@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>BabunBet — Şaka Sitesi</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#fbbf24;--muted:#9aa4b2;--glass:rgba(255,255,255,0.03)}
+    *{box-sizing:border-box;font-family:Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial}
+    body{margin:0;min-height:100vh;background:linear-gradient(135deg,#071028 0%, #0b1524 60%);color:#e6eef8;padding:32px}
+    header{display:flex;gap:16px;align-items:center;margin-bottom:24px}
+    .logo{width:56px;height:56px;background:var(--accent);border-radius:10px;display:grid;place-items:center;font-weight:800;color:#082032}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted)}
+    .container{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+    .card{background:linear-gradient(180deg,var(--card),#07101a);padding:18px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.6);}
+    .bets{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .bet{background:var(--glass);padding:12px;border-radius:8px;border:1px solid rgba(255,255,255,0.03)}
+    .bet h3{margin:0 0 8px 0;font-size:15px}
+    .odds{font-weight:700}
+    .actions{display:flex;gap:8px;margin-top:10px}
+    .btn{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px 10px;border-radius:8px;cursor:pointer;color:inherit}
+    .btn.primary{background:var(--accent);color:#082032;border:none}
+    aside.balance{position:sticky;top:32px}
+    .balance-box{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#07121b,#061018);border:1px solid rgba(255,255,255,0.03)}
+    .balance-amount{font-size:28px;font-weight:800}
+    .log{margin-top:12px;max-height:220px;overflow:auto;padding:10px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent)}
+    footer{margin-top:20px;color:var(--muted);font-size:13px}
+    .small{font-size:12px;color:var(--muted)}
+    input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">BB</div>
+    <div>
+      <h1>BabunBet <span class="small">(Şaka için)</span></h1>
+      <p class="lead small">Gerçek para istemez — sadece eğlence amaçlı, şaka sitesi.</p>
+    </div>
+  </header>
+
+  <div class="container">
+    <main>
+      <div class="card">
+        <h2 style="margin-top:0">Günün Şaka Bahisleri</h2>
+        <p class="small">Rastgele oluşturulmuş maçlar ve şanslar. Gerçek para, hesap veya bahis yoktur.</p>
+        <div class="bets" id="bets">
+          <!-- bahis kartları JS ile dolacak -->
+        </div>
+        <div style="margin-top:14px" class="small">Not: Bu site eğitim/şaka amaçlıdır. Gerçek bahis yapmayın.</div>
+      </div>
+
+      <div style="margin-top:14px" class="card">
+        <h3 style="margin:0 0 10px 0">Hızlı Sonuç (RNG)</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn" id="rng-small">Hızlı At</button>
+          <button class="btn primary" id="rng-big">Mega At (Riske Gir)</button>
+        </div>
+        <div id="rng-result" style="margin-top:12px" class="small"></div>
+      </div>
+
+    </main>
+
+    <aside class="balance">
+      <div class="balance-box card">
+        <div class="small">Şaka Bakiye</div>
+        <div class="balance-amount" id="balance">₺1000</div>
+
+        <div>
+          <label class="small">Bahis Miktarı</label>
+          <input id="bet-amount" type="number" min="1" value="50">
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="btn primary" id="place-btn">Şaka Bahsi Koy</button>
+          <button class="btn" id="reset-btn">Bakiye Sıfırla</button>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+
+      <div style="margin-top:12px" class="card small">
+        <strong>Bilgilendirme</strong>
+        <p class="small">Bu site gerçek bahis, ödeme veya kullanıcı verisi toplamaz. Her şey tarayıcıda çalışır ve sadece eğlencelidir.</p>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <div>© BabunBet — Şaka amaçlı projedir.</div>
+  </footer>
+
+  <script>
+    // Basit "bahis" objeleri
+    const sampleBets = [
+      {id:1,title:'Babun FC - Banana United',odds: (Math.random()*3+1).toFixed(2)},
+      {id:2,title:'Kahve SK - Çayspor',odds: (Math.random()*3+1).toFixed(2)},
+      {id:3,title:'Gökyüzü - Yer',odds: (Math.random()*5+1).toFixed(2)},
+      {id:4,title:'Sabah - Akşam',odds: (Math.random()*4+1).toFixed(2)}
+    ];
+
+    const betsEl = document.getElementById('bets');
+    const logEl = document.getElementById('log');
+    const balanceEl = document.getElementById('balance');
+    const betAmountEl = document.getElementById('bet-amount');
+    const placeBtn = document.getElementById('place-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const rngSmall = document.getElementById('rng-small');
+    const rngBig = document.getElementById('rng-big');
+    const rngResult = document.getElementById('rng-result');
+
+    // Local fake balance (only in-memory)
+    let balance = 1000;
+
+    function renderBets(){
+      betsEl.innerHTML='';
+      for(const b of sampleBets){
+        const div = document.createElement('div');
+        div.className='bet';
+        div.innerHTML=`<h3>${b.title}</h3><div class="small">Oran: <span class="odds">${b.odds}</span></div>
+          <div class="actions">
+            <button class="btn" data-id="${b.id}" onclick="quickBet(${b.id})">Hemen Şaka Koy</button>
+            <button class="btn primary" onclick="viewDetails(${b.id})">Detay</button>
+          </div>`;
+        betsEl.appendChild(div);
+      }
+    }
+
+    function log(text){
+      const line = document.createElement('div');
+      line.textContent = `${new Date().toLocaleTimeString()} — ${text}`;
+      logEl.prepend(line);
+    }
+
+    function quickBet(id){
+      const b = sampleBets.find(x=>x.id===id);
+      const amt = Number(betAmountEl.value)||1;
+      if(amt>balance){log('Yetersiz bakiye: ' + amt);return}
+      const win = Math.random() < 0.5; // %50 şaka şansı
+      if(win){
+        const won = Math.floor(amt * Number(b.odds));
+        balance += won;
+        log(`KAZANDIN! ${b.title} - +₺${won} (oran ${b.odds})`);
+      } else {
+        balance -= amt;
+        log(`KAYBETTİN. ${b.title} - -₺${amt}`);
+      }
+      updateBalance();
+    }
+
+    function viewDetails(id){
+      const b = sampleBets.find(x=>x.id===id);
+      alert(`${b.title}\nOran: ${b.odds}\nBu sadece bir şaka bahistir. Gerçek para içermiyor.`);
+    }
+
+    function updateBalance(){
+      balanceEl.textContent = '₺' + balance;
+    }
+
+    placeBtn.addEventListener('click', ()=>{
+      // Basit rastgele bet: seçilen oranlara göre sonuç
+      const amt = Number(betAmountEl.value)||1;
+      if(amt>balance){log('Place: Yetersiz bakiye');return}
+      const b = sampleBets[Math.floor(Math.random()*sampleBets.length)];
+      const prob = 1 / Number(b.odds); // düşük oran, düşük kazanma şansı
+      const win = Math.random() < prob;
+      if(win){
+        const won = Math.floor(amt * Number(b.odds));
+        balance += won;
+        log(`Şaka Bahisi Kazandı: ${b.title} +₺${won}`);
+      } else {
+        balance -= amt;
+        log(`Şaka Bahisi Kaybedildi: ${b.title} -₺${amt}`);
+      }
+      updateBalance();
+    });
+
+    resetBtn.addEventListener('click', ()=>{balance = 1000;updateBalance();log('Bakiye sıfırlandı (şaka)')});
+
+    rngSmall.addEventListener('click', ()=>{
+      const r = Math.random();
+      rngResult.textContent = r<0.5 ? 'Kaybettin (şaka).' : 'Kazandın! (şaka)';
+      log('RNG Hızlı At: ' + rngResult.textContent);
+    });
+    rngBig.addEventListener('click', ()=>{
+      const r = Math.random();
+      rngResult.textContent = r<0.3 ? 'Mega Kaybettin.' : 'Mega Kazandın!';
+      log('RNG Mega At: ' + rngResult.textContent);
+    });
+
+    // Başlangıç
+    renderBets();
+    updateBalance();
+    log('BabunBet hazır. Her şey sadece şaka.');
+
+    // Kullanıcı etkileşimleri için global fonksiyonlar (basit demo)
+    window.quickBet = quickBet;
+    window.viewDetails = viewDetails;
+  </script>
+</body>
+</html>
